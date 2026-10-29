@@ -1,0 +1,30 @@
+# 凭据与运行态——永远不要提交
+
+.env
+*.env
+agent/.env
+
+# 运行输出与状态
+agent/out/
+agent/state/
+agent/__pycache__/
+tdx/__pycache__/
+tdx/data/
+__pycache__/
+*.pyc
+
+# 本地 venv
+.venv/
+venv/
+
+# 个人偏好与记忆
+memories/MEMORY.md
+memories/USER.md
+memories/owner.md
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

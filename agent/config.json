@@ -1,0 +1,43 @@
+{
+  "_comment": "缠论盘中监控 配置。改这里不用改代码。",
+  "watchlist_source": "tdx_zxg",
+  "_watchlist_note": "tdx_zxg = 实时读通达信自选股 T0002/blocknew/zxg.blk，你在客户端加票后自动跟随",
+  "exclude_codes": [],
+  "levels": {
+    "main": "30m",
+    "sub": "5m",
+    "micro": "1m",
+    "trend": "day"
+  },
+  "bars_count": {
+    "30m": 320,
+    "5m": 240,
+    "1m": 240,
+    "day": 250
+  },
+  "compute_micro": true,
+  "conn": 6,
+  "progress": {
+    "_comment": "A 方案：同一候选的进展复推。两者满足其一即复推（is_update=true）。",
+    "_note": "只在「本轮确实该推」时刷新基线，否则阈值永远重新计时、复推永不触发。",
+    "min_interval_min": 60,
+    "price_change_pct": 1.5
+  },
+  "out_dir": "out",
+  "push": {
+    "channel": "clawchat",
+    "_channel_note": "clawchat = 渲染 markdown 后用 hermes send 投到该 profile 的 ClawChat home channel（现状，2026-10-16 切换）；feishu = 旧飞书卡片通道（.env 里 FEISHU_ENABLED=0 已停用，改回 1 才可用）",
+    "clawchat": {
+      "target": "clawchat",
+      "profile": "chanlun",
+      "_hermes_home_note": "改成你自己的 Hermes 根目录，例如 C:/Users/<you>/AppData/Local/hermes；也可以用环境变量 HERMES_HOME",
+      "hermes_home": "",
+      "hermes_cmd": "",
+      "timeout_s": 120
+    },
+    "title_prefix": "缠论盯盘",
+    "min_state": ["候选", "已确认"],
+    "push_index_as_background": true,
+    "max_stocks_per_card": 8
+  }
+}

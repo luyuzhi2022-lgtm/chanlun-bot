@@ -1,0 +1,35 @@
+【缠论盘中扫描】本轮的数据采集与结构计算结果已经附在上下文里（run_scan.sh 打印的 JSON）。
+
+第 0 步 · 门闸（先做）
+- 若 JSON 里 trading=false，或 stocks 为空 / 全部是 error → 立即结束，什么都不做。
+  只回复 [SILENT] 这七个字符（一字不差，不要翻译成中文，不要加任何其他内容）。
+- 注：没有「该推」内容的轮次已被脚本的 wake gate 拦截，根本不会叫醒你；能收到本轮就说明至少有一条 is_new 或 is_update 的候选。
+
+第 1 步 · 复核
+只有 chanlun-live-scan 这一个技能已预加载（其中的「每轮分析的固定次序」一节规定了复核顺序）。其余缠论技能**没有预加载**——需要哪条细则就先 skill_view(name=...) 把它读进来再判定，不要凭记忆：
+结构合法性/分型笔 → chanlun-structure-parser；中枢 ZD/ZG/状态/extended/第几个中枢 → chanlun-zhongshu-mapper；背驰三前提与 MACD 力度 → chanlun-divergence-diagnosis；中阴状态 → chanlun-zhongyin-stage；三类买卖点逐项打勾 → chanlun-buy-sell-points；把候选收缩到一个点 → chanlun-qujian-tao；中枢震荡强弱（Zn）→ chanlun-zhongshu-oscillation；小转大 → chanlun-small-to-large；背驰后三种情景 → chanlun-multi-level-scenario；换一种合法分解复核 → chanlun-duoyixing-jiehelv。
+需要分型、完整笔序列或 1 分钟结构时，用 read_file 读 JSON 里 full_json 指向的文件（stdout 是精简版）。
+
+第 2 步 · 判定
+给每个 candidate 一个最终状态，只能四选一：候选 / 已确认 / 已失效 / 信息不足。
+
+推送对象就两类，看候选自带的字段决定：
+- ① `is_new=true` 且状态为 候选/已确认 → 新信号，正常推送。
+- ② `is_new=false` 且 `is_update=true` → **同一信号的进展更新**。这不是新信号：类型、级别、端点、失效条件都不变，不要把它当成新买点。字段 `progress` 里已经写好了「现价 / 较上次推送价变动 X% / 距上次推送 N 分钟」，把它放进该条的 `note`，并在标题里加「进展」两字，让用户一眼看出这是老候选的走势变化（例：`缠论盯盘 11:30 进展`）。
+- `is_new=false` 且 `is_update=false` → 不推，静默。
+- 不过关的放进 `reject` 并写明一句理由。`已失效` / `信息不足` 不推。
+- is_index=true 的票（如 999999）只作大盘背景，不出可执行买卖点。
+- 判断不了就写「信息不足」，不要为了凑结论而编。禁止输出「现在买入/卖出」这类指令，只给结构判断与失效条件，不承诺盈利。
+
+第 3 步 · 推送
+没有任何要推的信号 → 不写文件、不推送、不调用任何工具，只回复 [SILENT] 这七个字符（一字不差，不要翻译，不要加任何其他内容）。
+有信号（包括只有进展更新）→
+1) 写文件 E:/Hermes/chanlun-agent/out/decide_<HHMM>.json：
+{"title":"缠论盯盘 <HH:MM>","summary":"一句话大盘背景","approve":[{"code":"600089","type":"三类买点","note":"失效条件：跌回 17.43"}],"reject":[{"code":"002555","type":"二类买点","reason":"一买未过背驰三前提"}],"footer":"非投资建议；仅结构判断"}
+进展更新的 note 直接用候选的 `progress` 字段（可以再补一句「失效条件仍未触发」或「已跌破 X，失效条件接近触发」）。
+2) 执行（必须用 tdx-live 的 venv，Hermes 自带 python 没有依赖）：
+cd /e/Hermes/chanlun-agent && E:/Hermes/tdx-live/.venv/Scripts/python.exe push_signals.py --prep-latest --decide out/decide_<HHMM>.json
+3) 返回 {"ok":true,"sent":true} 才算成功。ok=false 时按错误信息纠正一次（比如 approve 里的 code+type 写错，脚本会列出可选项）；仍失败就把错误原样写进最终回复。
+4) 最终回复：一行摘要（推了几条、哪只票、是新信号还是进展更新）。
+
+时效纪律：structure_lag_min 是最后一段结构的确认时间距今的分钟数。隔夜结构不算盘中新信号——lag 明显超过本轮间隔时，在 note 里标注「结构陈旧」（但进展更新不受此限，它本来就是跟踪老信号）。

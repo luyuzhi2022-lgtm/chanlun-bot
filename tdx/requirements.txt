@@ -1,0 +1,9 @@
+# 行情层依赖（tdx/ + agent/ 都需要）
+# 装法：python -m venv .venv && .venv/Scripts/python.exe -m pip install -r tdx/requirements.txt
+pytdx==1.72
+mootdx==0.11.7
+pandas>=2.0
+numpy>=1.26
+
+# 注意：tdx/tdx_tq_strategy.py 是可选文件，依赖通达信官方 PYPlugins 的
+# ``tqcenter`` 模块（不在 pip 上，随客户端提供）。不用它就不需要装任何东西。

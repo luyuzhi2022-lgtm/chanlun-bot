@@ -1,0 +1,21 @@
+【缠论收盘全览】每个交易日 15:05 一轮。上下文已附上 run_scan.sh close 的输出 JSON。
+
+第 0 步 · 门闸
+- 若 trading=false 或 stocks 为空 / 全 error → 什么都不做，只回复 [SILENT] 这七个字符（一字不差，不要翻译，不要加任何其他内容），结束。
+
+第 1 步 · 收盘复盘
+只有 chanlun-live-scan 这一个技能已预加载（其中的「每轮分析的固定次序」一节规定了复核顺序）。其余缠论技能**没有预加载**——需要哪条细则就先 skill_view(name=...) 读进来再判定，不要凭记忆：结构合法性 → chanlun-structure-parser；中枢 ZD/ZG/状态/extended → chanlun-zhongshu-mapper；背驰三前提 → chanlun-divergence-diagnosis；中阴状态 → chanlun-zhongyin-stage；买卖点逐项打勾 → chanlun-buy-sell-points；区间套 → chanlun-qujian-tao；中枢震荡强弱 → chanlun-zhongshu-oscillation；小转大 → chanlun-small-to-large；背驰后三种情景 → chanlun-multi-level-scenario；多义性复核 → chanlun-duoyixing-jiehelv。需要细节时 read_file 读 full_json。
+每只票给出：①当日走势类型与中枢状态 ②中枢区间 [ZD, ZG] 与是第几个中枢 ③最后一个买卖点的类型 / 状态 / 位置 ④明日要盯的成立条件与失效条件 ⑤背驰后的三种情景（chanlun-multi-level-scenario）。
+is_index=true 的票只作大盘背景。
+
+第 2 步 · 推送（每天必推一份，不受「有无新信号」限制）
+写文件 E:/Hermes/chanlun-agent/out/close_<YYYYMMDD>.json：
+{"title":"缠论收盘全览 <日期>","summary":"大盘一句话","approve":[{"code":"600089","type":"三类买点","note":"..."}],"freeform":"每只票的复盘正文（markdown，**加粗**支持）","reject":[],"footer":"非投资建议；仅结构判断"}
+approve 只放当日仍有效、且 prep 里确实存在的 候选/已确认 信号（脚本会按 code+type 去 prep 里取正文）；没有就留空数组，只靠 freeform 出正文。
+然后执行（必须用 tdx-live 的 venv）：
+cd /e/Hermes/chanlun-agent && E:/Hermes/tdx-live/.venv/Scripts/python.exe push_signals.py --prep-latest --decide out/close_<YYYYMMDD>.json
+返回 {"ok":true,"sent":true} 才算成功；失败按错误纠正一次，仍失败就把错误写进最终回复。
+
+第 3 步 · 最终回复一行摘要。
+
+纪律：只给结构判断与失效条件，禁止输出「现在买入/卖出」，不承诺盈利。

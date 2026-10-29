@@ -1,0 +1,65 @@
+# 这个 bot 的 Hermes profile 配置（示例）
+#
+# 完整版的 config.yaml 有上千行 Hermes 默认项，这里只挑「定义这个 bot 行为」的几块。
+# 用法：把下面各块按同名键合并进 <HERMES_HOME>/profiles/<profile>/config.yaml。
+# 注意：platforms.clawchat.extra 里的 user_id / agent_id / owner_user_id 是
+# 每个 agent 独有的，激活新 agent 时由 ClawChat 自己写入，**不要抄别人的**。
+
+# ── 模型：盯盘任务要便宜，但推理强度不能太低 ──────────────────────
+model:
+  default: deepseek-v4.1-flash-1017
+  provider: alibaba-token-plan-cn
+  base_url: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+  api_mode: chat_completions
+
+agent:
+  reasoning_effort: medium
+
+# ── 插件：ClawChat 负责收发，Honcho 负责跨 bot 共享记忆（可去掉）──────
+plugins:
+  enabled:
+    - clawchat
+    - honcho
+  disabled: []
+
+memory:
+  provider: honcho          # 留空 = 用原生 MEMORY.md
+  user_profile_enabled: true
+  nudge_interval: 0
+
+# ── cron：任务默认用的模型（与主模型分开钉住，避免会话手切模型影响定时任务）──
+cron:
+  catch_up_missed: true
+  model: deepseek-v4.1-flash-1017
+  model_provider: alibaba-token-plan-cn
+
+compression:
+  threshold_tokens: 150000
+
+# ── 技能：12 个缠论技能放 profile 的 skills/finance/ 下，另外挂 ClawChat 的技能目录 ──
+skills:
+  external_dirs:
+    - clawchat-skills
+
+# ── ClawChat 平台（激活后由客户端写回真实 id）────────────────────
+platforms:
+  clawchat:
+    enabled: true
+    extra:
+      base_url: https://app.clawling.com
+      websocket_url: wss://app.clawling.com/ws
+      user_id: ""
+      agent_id: ""
+      owner_user_id: ""
+      profile: chanlun
+      output_visibility: normal
+      runtime_status_messages: false
+
+# ── 允许自动执行的动作（盯盘脚本要跑 shell / 子进程）────────────────
+command_allowlist:
+  - execute_code
+  - script execution via -e/-c flag
+  - script execution via heredoc
+
+sessions:
+  auto_archive: true
